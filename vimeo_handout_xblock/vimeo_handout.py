@@ -15,6 +15,9 @@ from web_fragments.fragment import Fragment
 class VimeoHandoutXBlock(XBlock):
     """Embeds a Vimeo video and provides handout/presentation downloads."""
 
+    has_author_view = False
+    has_score = False
+
     display_name = String(
         display_name="Display Name",
         default="Vimeo Video",
@@ -123,7 +126,8 @@ class VimeoHandoutXBlock(XBlock):
                 raise ValueError("file_type must be 'handout' or 'presentation'")
 
             filename = os.path.basename(upload.file.name)
-            storage_path = f"xblock/vimeo/{file_type}/{filename}"
+            usage_id = str(self.scope_ids.usage_id)
+            storage_path = f"xblock/vimeo/{usage_id}/{file_type}/{filename}"
             saved_path = default_storage.save(storage_path, upload.file)
 
             if file_type == "handout":
@@ -136,7 +140,7 @@ class VimeoHandoutXBlock(XBlock):
             return Response(
                 json_body={"result": "success", "filename": filename},
             )
-        except Exception as exc:
+        except (KeyError, ValueError, IOError) as exc:
             return Response(
                 json_body={"result": "error", "message": str(exc)},
             )
