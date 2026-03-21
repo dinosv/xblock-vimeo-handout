@@ -1,8 +1,12 @@
 """Vimeo Handout XBlock."""
 
+import json
+import os
 from importlib import resources as _resources
 
+from django.core.files.storage import default_storage
 from django.template import Context, Template
+from webob import Response
 from xblock.core import XBlock
 from xblock.fields import Scope, String
 from web_fragments.fragment import Fragment
@@ -56,8 +60,6 @@ class VimeoHandoutXBlock(XBlock):
         """Generate a download URL for a stored file."""
         if not path:
             return ""
-        from django.core.files.storage import default_storage
-
         return default_storage.url(path)
 
     def student_view(self, context=None):
@@ -77,3 +79,64 @@ class VimeoHandoutXBlock(XBlock):
         frag = Fragment(html)
         frag.add_css(self._resource_string("static/css/vimeo_handout.css"))
         return frag
+
+    def studio_view(self, context=None):
+        """Render the Studio editing view."""
+        template_str = self._resource_string("static/html/studio_view.html")
+        template = Template(template_str)
+        ctx = Context({
+            "vimeo_embed_code": self.vimeo_embed_code,
+            "handout_filename": self.handout_filename,
+            "presentation_filename": self.presentation_filename,
+        })
+        html = template.render(ctx)
+        frag = Fragment(html)
+        frag.initialize_js("VimeoHandoutStudioInit")
+        return frag
+
+    @XBlock.handler
+    def save_settings(self, request, suffix=""):
+        """Save the embed code."""
+        from .sanitise import sanitise_vimeo_embed
+
+        try:
+            data = json.loads(request.body)
+            embed_code = data.get("vimeo_embed_code", "").strip()
+            if embed_code:
+                embed_code = sanitise_vimeo_embed(embed_code)
+            self.vimeo_embed_code = embed_code
+            return Response(
+                json_body={"result": "success"},
+            )
+        except (ValueError, json.JSONDecodeError) as exc:
+            return Response(
+                json_body={"result": "error", "message": str(exc)},
+            )
+
+    @XBlock.handler
+    def upload_file(self, request, suffix=""):
+        """Handle file upload for handout or presentation."""
+        try:
+            upload = request.params["file"]
+            file_type = request.params.get("file_type", "")
+            if file_type not in ("handout", "presentation"):
+                raise ValueError("file_type must be 'handout' or 'presentation'")
+
+            filename = os.path.basename(upload.file.name)
+            storage_path = f"xblock/vimeo/{file_type}/{filename}"
+            saved_path = default_storage.save(storage_path, upload.file)
+
+            if file_type == "handout":
+                self.handout_path = saved_path
+                self.handout_filename = filename
+            else:
+                self.presentation_path = saved_path
+                self.presentation_filename = filename
+
+            return Response(
+                json_body={"result": "success", "filename": filename},
+            )
+        except Exception as exc:
+            return Response(
+                json_body={"result": "error", "message": str(exc)},
+            )

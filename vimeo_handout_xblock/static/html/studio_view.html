@@ -1,0 +1,89 @@
+<div class="vimeo-handout-studio">
+    <h3>Vimeo Video Settings</h3>
+
+    <div class="field">
+        <label for="vimeo-embed-code">Vimeo Embed Code</label>
+        <textarea id="vimeo-embed-code" rows="4"
+                  placeholder="Paste Vimeo embed HTML here...">{{ vimeo_embed_code }}</textarea>
+        <p class="field-help">
+            In Vimeo, click Share, then copy the embed code.
+        </p>
+    </div>
+
+    <div class="field">
+        <label>Handout</label>
+        <span id="handout-filename">{{ handout_filename }}</span>
+        <input type="file" id="handout-upload" />
+    </div>
+
+    <div class="field">
+        <label>Presentation</label>
+        <span id="presentation-filename">{{ presentation_filename }}</span>
+        <input type="file" id="presentation-upload" />
+    </div>
+
+    <div class="actions">
+        <button class="save-button action-primary">Save</button>
+        <button class="cancel-button action-secondary">Cancel</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    var root = document.querySelector('.vimeo-handout-studio');
+    var runtime = null;
+    var element = null;
+
+    window.VimeoHandoutStudioInit = function(rt, el) {
+        runtime = rt;
+        element = el;
+        root = element.querySelector('.vimeo-handout-studio');
+
+        root.querySelector('.save-button').addEventListener('click', saveSettings);
+        root.querySelector('.cancel-button').addEventListener('click', function() {
+            runtime.notify('cancel', {});
+        });
+        root.querySelector('#handout-upload').addEventListener('change', function() {
+            uploadFile(this.files[0], 'handout');
+        });
+        root.querySelector('#presentation-upload').addEventListener('change', function() {
+            uploadFile(this.files[0], 'presentation');
+        });
+    };
+
+    function saveSettings() {
+        var embedCode = root.querySelector('#vimeo-embed-code').value;
+        var handlerUrl = runtime.handlerUrl(element, 'save_settings');
+        fetch(handlerUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({vimeo_embed_code: embedCode})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result === 'success') {
+                runtime.notify('save', {state: 'end'});
+            } else {
+                alert(data.message || 'Error saving settings.');
+            }
+        });
+    }
+
+    function uploadFile(file, fileType) {
+        if (!file) return;
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('file_type', fileType);
+        var handlerUrl = runtime.handlerUrl(element, 'upload_file');
+        fetch(handlerUrl, {method: 'POST', body: formData})
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.result === 'success') {
+                root.querySelector('#' + fileType + '-filename').textContent = data.filename;
+            } else {
+                alert(data.message || 'Upload failed.');
+            }
+        });
+    }
+})();
+</script>
