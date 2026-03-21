@@ -1,0 +1,24 @@
+<div class="vimeo-handout-xblock">
+    <div class="vimeo-embed-container">
+        {% if vimeo_embed_code %}
+            {{ vimeo_embed_code|safe }}
+        {% else %}
+            <p class="vimeo-placeholder">No video configured.</p>
+        {% endif %}
+    </div>
+
+    {% if handout_filename or presentation_filename %}
+    <div class="vimeo-downloads">
+        {% if handout_filename %}
+        <a class="vimeo-download-link" href="{{ handout_url }}" download>
+            Handout: {{ handout_filename }}
+        </a>
+        {% endif %}
+        {% if presentation_filename %}
+        <a class="vimeo-download-link" href="{{ presentation_url }}" download>
+            Presentation: {{ presentation_filename }}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

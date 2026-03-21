@@ -1,0 +1,43 @@
+.vimeo-handout-xblock .vimeo-embed-container {
+    width: 100%;
+    max-width: 960px;
+}
+
+.vimeo-handout-xblock .vimeo-embed-container iframe {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+    border: none;
+}
+
+.vimeo-handout-xblock .vimeo-placeholder {
+    padding: 2rem;
+    text-align: center;
+    color: #666;
+    background: #f5f5f5;
+    border: 1px dashed #ccc;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vimeo-handout-xblock .vimeo-downloads {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.vimeo-handout-xblock .vimeo-download-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #0073e6;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.vimeo-handout-xblock .vimeo-download-link:hover {
+    background: #005bb5;
+}
